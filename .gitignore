@@ -1,0 +1,24 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local Airflow files
+logs/
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+
+# Operating system files
+.DS_Store
+Thumbs.db
