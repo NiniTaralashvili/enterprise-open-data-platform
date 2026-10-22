@@ -1,0 +1,120 @@
+import logging
+from datetime import datetime, timezone
+from math import isfinite
+from typing import Any, Optional
+
+import requests
+
+from .air_quality_config import (
+    AirQualityConfig,
+    load_air_quality_config,
+)
+
+
+logger = logging.getLogger(__name__)
+
+BASE_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
+
+
+class AirQualityAPIError(Exception):
+    """ჰაერის ხარისხის მონაცემების მიღების შეცდომა."""
+
+
+class AirQualityClient:
+    def __init__(
+        self,
+        config: Optional[AirQualityConfig] = None,
+    ) -> None:
+        self.config = config or load_air_quality_config()
+
+    def get_current_measurement(self) -> dict[str, Any]:
+        params = {
+            "latitude": self.config.latitude,
+            "longitude": self.config.longitude,
+            "current": "pm2_5,pm10",
+            "timezone": "UTC",
+            "timeformat": "unixtime",
+        }
+
+        logger.info(
+            "ჰაერის ხარისხის მოთხოვნა: city=%s, lat=%s, lon=%s",
+            self.config.city,
+            self.config.latitude,
+            self.config.longitude,
+        )
+
+        try:
+            response = requests.get(
+                BASE_URL,
+                params=params,
+                timeout=self.config.timeout_seconds,
+            )
+            response.raise_for_status()
+
+        except requests.exceptions.Timeout as exc:
+            logger.error("ჰაერის ხარისხის API: timeout")
+            raise AirQualityAPIError(
+                "API-ის პასუხის ლოდინის დრო ამოიწურა"
+            ) from exc
+
+        except requests.exceptions.RequestException as exc:
+            logger.error("API მოთხოვნის შეცდომა: %s", exc)
+            raise AirQualityAPIError(
+                f"API მოთხოვნა ვერ შესრულდა: {exc}"
+            ) from exc
+
+        try:
+            data = response.json()
+            current = data["current"]
+
+            pm2_5 = current["pm2_5"]
+            pm10 = current["pm10"]
+
+            for name, value in (("pm2_5", pm2_5), ("pm10", pm10)):
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not isfinite(value)
+                    or value < 0
+                ):
+                    raise ValueError(
+                        f"{name}-ის არასწორი მნიშვნელობა: {value}"
+                    )
+
+            measured_at = datetime.fromtimestamp(
+                current["time"],
+                tz=timezone.utc,
+            )
+
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            OverflowError,
+            OSError,
+        ) as exc:
+            logger.error("API პასუხის დამუშავების შეცდომა: %s", exc)
+            raise AirQualityAPIError(
+                f"API-მ მოულოდნელი მონაცემები დააბრუნა: {exc}"
+            ) from exc
+
+        measurement = {
+            "city": self.config.city,
+            "latitude": self.config.latitude,
+            "longitude": self.config.longitude,
+            "measured_at": measured_at,
+            "pm2_5_ug_m3": pm2_5,
+            "pm10_ug_m3": pm10,
+            "source": "open-meteo",
+            "data_kind": "model",
+        }
+
+        logger.info(
+            "მიღებულია: city=%s, PM2.5=%s, PM10=%s, time=%s",
+            measurement["city"],
+            pm2_5,
+            pm10,
+            measured_at.isoformat(),
+        )
+
+        return measurement
