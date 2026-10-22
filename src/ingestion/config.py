@@ -22,4 +22,3 @@ def load_weather_config() -> WeatherConfig:
         latitude=float(os.getenv("WEATHER_LAT", "41.7151")),
         longitude=float(os.getenv("WEATHER_LON", "44.8271")),
     )
-    
