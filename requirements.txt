@@ -1,7 +1,10 @@
 asttokens==3.0.2
+certifi==2026.10.19
+charset-normalizer==3.5.2
 comm==0.2.3
 debugpy==1.8.22
 executing==2.2.1
+idna==3.20
 ipykernel==7.4.0
 ipython==9.17.1
 ipython_pygments_lexers==1.1.1
@@ -23,9 +26,11 @@ Pygments==2.21.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.4
 pyzmq==27.2.0
+requests==2.34.2
 six==1.17.0
 stack-data==0.6.3
 tornado==6.5.10
 traitlets==5.16.1
 typing_extensions==4.16.0
+urllib3==2.8.0
 wcwidth==0.9.1
