@@ -27,10 +27,15 @@ class AirQualityClient:
     ) -> None:
         self.config = config or load_air_quality_config()
 
-    def get_current_measurement(self) -> dict[str, Any]:
+    def fetch(
+        self,
+        latitude: float,
+        longitude: float,
+        city: str,
+    ) -> dict[str, Any]:
         params = {
-            "latitude": self.config.latitude,
-            "longitude": self.config.longitude,
+            "latitude": latitude,
+            "longitude": longitude,
             "current": "pm2_5,pm10",
             "timezone": "UTC",
             "timeformat": "unixtime",
@@ -38,9 +43,9 @@ class AirQualityClient:
 
         logger.info(
             "ჰაერის ხარისხის მოთხოვნა: city=%s, lat=%s, lon=%s",
-            self.config.city,
-            self.config.latitude,
-            self.config.longitude,
+            city,
+            latitude,
+            longitude,
         )
 
         try:
@@ -99,9 +104,9 @@ class AirQualityClient:
             ) from exc
 
         measurement = {
-            "city": self.config.city,
-            "latitude": self.config.latitude,
-            "longitude": self.config.longitude,
+            "city": city,
+            "latitude": latitude,
+            "longitude": longitude,
             "measured_at": measured_at,
             "pm2_5_ug_m3": pm2_5,
             "pm10_ug_m3": pm10,
@@ -118,3 +123,10 @@ class AirQualityClient:
         )
 
         return measurement
+
+    def get_current_measurement(self) -> dict[str, Any]:
+        return self.fetch(
+            latitude=self.config.latitude,
+            longitude=self.config.longitude,
+            city=self.config.city,
+        )
