@@ -22,18 +22,24 @@ class WeatherClient:
     ) -> None:
         self.config = config or load_weather_config()
 
-    def get_current_weather(self) -> dict[str, Any]:
+    def fetch(
+        self,
+        latitude: float,
+        longitude: float,
+        label: str = "",
+    ) -> dict[str, Any]:
         params = {
-            "latitude": self.config.latitude,
-            "longitude": self.config.longitude,
+            "latitude": latitude,
+            "longitude": longitude,
             "current": "temperature_2m,wind_speed_10m",
             "timezone": self.config.timezone,
         }
 
         logger.info(
-            "მოთხოვნა Open-Meteo API-სთან: lat=%s, lon=%s",
-            self.config.latitude,
-            self.config.longitude,
+            "მოთხოვნა Open-Meteo API-სთან [%s]: lat=%s, lon=%s",
+            label or "?",
+            latitude,
+            longitude,
         )
 
         try:
@@ -46,28 +52,38 @@ class WeatherClient:
 
         except requests.exceptions.Timeout as exc:
             logger.error(
-                "Timeout Open-Meteo API-სთან დაკავშირებისას"
+                "[%s] Timeout Open-Meteo API-სთან დაკავშირებისას",
+                label,
             )
             raise WeatherAPIError(
-                "API timeout-ით ჩავარდა"
+                f"[{label}] API timeout-ით ჩავარდა"
             ) from exc
 
         except requests.exceptions.RequestException as exc:
             logger.error(
-                "Open-Meteo API-მ დააბრუნა შეცდომა: %s",
+                "[%s] Open-Meteo API-მ დააბრუნა შეცდომა: %s",
+                label,
                 exc,
             )
             raise WeatherAPIError(
-                f"API request ჩავარდა: {exc}"
+                f"[{label}] API request ჩავარდა: {exc}"
             ) from exc
 
         data = response.json()
 
         logger.info(
-            "მიღებულია: temperature=%s°C, wind=%s km/h (დრო: %s)",
+            "[%s] მიღებულია: temperature=%s°C, wind=%s km/h (დრო: %s)",
+            label,
             data["current"]["temperature_2m"],
             data["current"]["wind_speed_10m"],
             data["current"]["time"],
         )
 
         return data
+
+    def get_current_weather(self) -> dict[str, Any]:
+        return self.fetch(
+            self.config.latitude,
+            self.config.longitude,
+            label="default",
+        )
