@@ -5,6 +5,8 @@ from typing import Any, Optional
 
 import requests
 
+from .retry import is_retryable_request_error, retry_with_backoff
+
 from .air_quality_config import (
     AirQualityConfig,
     load_air_quality_config,
@@ -26,6 +28,17 @@ class AirQualityClient:
         config: Optional[AirQualityConfig] = None,
     ) -> None:
         self.config = config or load_air_quality_config()
+
+    @retry_with_backoff(
+        (requests.exceptions.RequestException,),
+        should_retry=is_retryable_request_error,
+    )
+    def _get(self, params: dict) -> requests.Response:
+        response = requests.get(
+            BASE_URL, params=params, timeout=self.config.timeout_seconds,
+        )
+        response.raise_for_status()
+        return response
 
     def fetch(
         self,
@@ -49,12 +62,7 @@ class AirQualityClient:
         )
 
         try:
-            response = requests.get(
-                BASE_URL,
-                params=params,
-                timeout=self.config.timeout_seconds,
-            )
-            response.raise_for_status()
+            response = self._get(params)
 
         except requests.exceptions.Timeout as exc:
             logger.error("ჰაერის ხარისხის API: timeout")
