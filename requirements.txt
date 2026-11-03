@@ -40,3 +40,5 @@ traitlets==5.16.1
 typing_extensions==4.16.0
 urllib3==2.8.0
 wcwidth==0.9.1
+pyarrow==26.0.1
+fastavro==1.13.1

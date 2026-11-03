@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "WeatherRecord",
+  "fields": [
+    {
+      "name": "city",
+      "type": "string"
+    },
+    {
+      "name": "latitude",
+      "type": "double"
+    },
+    {
+      "name": "longitude",
+      "type": "double"
+    },
+    {
+      "name": "forecast_time",
+      "type": "string"
+    },
+    {
+      "name": "temperature_c",
+      "type": "double"
+    },
+    {
+      "name": "humidity_pct",
+      "type": "double"
+    }
+  ]
+}
