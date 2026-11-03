@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "demo-event",
+      "properties": {
+        "mag": 3.2,
+        "place": "Demo location",
+        "time": 1767225600000
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          44.75,
+          41.65,
+          8.2
+        ]
+      }
+    }
+  ]
+}

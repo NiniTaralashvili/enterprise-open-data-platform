@@ -3,6 +3,8 @@ from typing import Any, Optional
 
 import requests
 
+from .retry import is_retryable_request_error, retry_with_backoff
+
 from .config import WeatherConfig, load_weather_config
 
 
@@ -21,6 +23,17 @@ class WeatherClient:
         config: Optional[WeatherConfig] = None,
     ) -> None:
         self.config = config or load_weather_config()
+
+    @retry_with_backoff(
+        (requests.exceptions.RequestException,),
+        should_retry=is_retryable_request_error,
+    )
+    def _get(self, params: dict) -> requests.Response:
+        response = requests.get(
+            BASE_URL, params=params, timeout=self.config.timeout_seconds,
+        )
+        response.raise_for_status()
+        return response
 
     def fetch(
         self,
@@ -43,12 +56,7 @@ class WeatherClient:
         )
 
         try:
-            response = requests.get(
-                BASE_URL,
-                params=params,
-                timeout=self.config.timeout_seconds,
-            )
-            response.raise_for_status()
+            response = self._get(params)
 
         except requests.exceptions.Timeout as exc:
             logger.error(
@@ -69,7 +77,14 @@ class WeatherClient:
                 f"[{label}] API request ჩავარდა: {exc}"
             ) from exc
 
-        data = response.json()
+        try:
+            data = response.json()
+            current = data["current"]
+            for field in ("temperature_2m", "wind_speed_10m", "time"):
+                if current[field] is None:
+                    raise ValueError(f"Missing current value: {field}")
+        except (KeyError, TypeError, ValueError) as exc:
+            raise WeatherAPIError(f"Unexpected weather response: {exc}") from exc
 
         logger.info(
             "[%s] მიღებულია: temperature=%s°C, wind=%s km/h (დრო: %s)",
