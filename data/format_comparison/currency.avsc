@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "name": "CurrencyRecord",
+  "fields": [
+    {
+      "name": "currency_code",
+      "type": "string"
+    },
+    {
+      "name": "rate",
+      "type": "double"
+    },
+    {
+      "name": "quantity",
+      "type": "long"
+    },
+    {
+      "name": "rate_date",
+      "type": "string"
+    }
+  ]
+}
